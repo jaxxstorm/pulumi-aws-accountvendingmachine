@@ -1,0 +1,6 @@
+name: account_lambda
+runtime:
+  name: python
+  options:
+    virtualenv: venv
+description: Lambda function that provisions new accounts
