@@ -6,11 +6,14 @@ import pulumi_awsx as awsx
 import json
 
 
-repo = awsx.ecr.Repository("gsuite-watcher")
+repo = awsx.ecr.Repository(
+    "gsuite-watcher",
+    force_delete=True,
+)
 image = awsx.ecr.Image(
     "gsuite-watcher",
-    dockerfile="app/Dockerfile",
-    path="app",
+    dockerfile="example/Dockerfile",
+    path="example",
     repository_url=repo.url,
 )
 
@@ -36,13 +39,6 @@ lambda_role = aws.iam.Role(
 )
 
 aws.iam.RolePolicyAttachment(
-    "gsuite-watcher-policy-attachment-execute",
-    role=lambda_role.name,
-    policy_arn=aws.iam.ManagedPolicy.AWS_LAMBDA_EXECUTE,
-    opts=pulumi.ResourceOptions(parent=lambda_role),
-)
-
-aws.iam.RolePolicyAttachment(
     "gsuite-watcher-policy-attachment-basic",
     role=lambda_role.name,
     policy_arn=aws.iam.ManagedPolicy.AWS_LAMBDA_BASIC_EXECUTION_ROLE,
@@ -63,8 +59,8 @@ lambda_func = aws.lambda_.Function(
             "GITHUB_REPO": "aws-accounts",
             "AWS_CONTROLTOWER_ORG": "Testing",
             "AWS_CONTROLTOWER_ORG_ID_ON_DELETE": "ou-p8qa-7ts76j9l",
-            "OIDC_ROLE_ARN": "arn:aws:iam::609316800003:role/pulumi-deploy-ff54f5f"
-        } 
+            "OIDC_ROLE_ARN": "arn:aws:iam::609316800003:role/pulumi-deploy-ff54f5f",
+        }
     ),
 )
 
@@ -73,13 +69,24 @@ api_gw = aws.apigatewayv2.Api(
     protocol_type="HTTP",
 )
 
+aws.lambda_.Permission(
+    "gsuite-watcher",
+    statement_id="AllowAPIGatewayInvoke",
+    action="lambda:InvokeFunction",
+    function=lambda_func,
+    principal="apigateway.amazonaws.com",
+    source_arn=api_gw.execution_arn.apply(lambda arn: f"{arn}/*/*"),
+    opts=pulumi.ResourceOptions(depends_on=[api_gw]),
+)
+
 integration = aws.apigatewayv2.Integration(
     "lambda",
     api_id=api_gw.id,
     integration_type="AWS_PROXY",
     integration_method="POST",
-    integration_uri=lambda_func.invoke_arn,
+    integration_uri=lambda_func.arn,
     payload_format_version="2.0",
+    passthrough_behavior="WHEN_NO_MATCH",
 )
 
 route = aws.apigatewayv2.Route(
@@ -89,37 +96,18 @@ route = aws.apigatewayv2.Route(
     target=integration.id.apply(lambda id: f"integrations/{id}"),
 )
 
-deployment = aws.apigatewayv2.Deployment(
-    "gsuite-watcher",
-    api_id=api_gw.id,
-    triggers={
-        "redeployment": route.id,
-    },
-)
-
 # creating a stage to expose the deployments
 stage = aws.apigatewayv2.Stage(
     "gsuite-watcher",
     api_id=api_gw.id,
-    deployment_id=deployment.id,
-    #auto_deploy=True,
+    auto_deploy=True,
     route_settings=[
         aws.apigatewayv2.StageRouteSettingArgs(
             route_key=route.route_key,
             throttling_rate_limit=1000,
             throttling_burst_limit=500,
         )
-    ]
-)
-
-
-aws.lambda_.Permission(
-    "gsuite-watcher",
-    statement_id="AllowAPIGatewayInvoke",
-    action="lambda:InvokeFunction",
-    function=lambda_func.name,
-    principal="apigateway.amazonaws.com",
-    source_arn=api_gw.execution_arn.apply(lambda arn: f"{arn}/*/*")
+    ],
 )
 
 pulumi.export("api_url", stage.invoke_url)
