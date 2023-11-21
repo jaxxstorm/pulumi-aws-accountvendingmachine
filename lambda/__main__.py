@@ -12,9 +12,10 @@ repo = awsx.ecr.Repository(
 )
 image = awsx.ecr.Image(
     "gsuite-watcher",
-    dockerfile="example/Dockerfile",
-    path="example",
+    dockerfile="app/Dockerfile",
+    path="app",
     repository_url=repo.url,
+    env={"DOCKER_BUILDKIT": "1", "DOCKER_DEFAULT_PLATFORM": "linux/amd64"},
 )
 
 assume_policy_document = aws.iam.get_policy_document(
@@ -50,9 +51,10 @@ lambda_func = aws.lambda_.Function(
     role=lambda_role.arn,
     image_uri=image.image_uri,
     package_type="Image",
+    timeout=60,
     environment=aws.lambda_.FunctionEnvironmentArgs(
         variables={
-            "PULUMI_ACCESS_TOKEN": "pul-03f0fbb24db3fb643fac61a0fdb720cd0de21adc",
+            "PULUMI_ACCESS_TOKEN": "changeme",
             "PULUMI_ORG": "lbrlabs",
             "PULUMI_PROJECT_NAME": "aws-accounts",
             "GITHUB_ORG": "lbrlabs",
@@ -60,6 +62,7 @@ lambda_func = aws.lambda_.Function(
             "AWS_CONTROLTOWER_ORG": "Testing",
             "AWS_CONTROLTOWER_ORG_ID_ON_DELETE": "ou-p8qa-7ts76j9l",
             "OIDC_ROLE_ARN": "arn:aws:iam::609316800003:role/pulumi-deploy-ff54f5f",
+            "PULUMI_HOME": "/tmp/.pulumi",
         }
     ),
 )

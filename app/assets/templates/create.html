@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  {% block title %}Create a new AWS Account{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="p-2">
+  <form method="post">
+    <div class="mb-3">
+      <label for="accountname" class="form-label">Name</label>
+      <input type="text" class="form-control" name="accountname" id="accountname" aria-describedby="nameHelp" required>
+      <div id="nameHelp" class="form-text">Choose a name for your AWS account</div>
+    </div>
+    <div class="mb-3">
+      <label for="email" class="form-label">Account Owner Email</label>
+      <input type="text" class="form-control" id="email" name="email" required>
+      <div id="nameHelp" class="form-text">Specify the email of the account owner</div>
+    </div>
+    <div class="mb-3">
+      <label for="firstname" class="form-label">Account Owner First Name</label>
+      <input type="text" class="form-control" id="firstname" name="firstname" required>
+      <div id="nameHelp" class="form-text">Specify the account owner first name</div>
+    </div>
+    <div class="mb-3">
+      <label for="lastname" class="form-label">Account Owner Last Name</label>
+      <input type="text" class="form-control" id="lastname" name="lastname" required>
+      <div id="nameHelp" class="form-text">Specify the account owner last name</div>
+    </div>
+    <button type="submit" class="btn btn-primary">Create</button>
+  </form>
+</div>
+{% endblock %}

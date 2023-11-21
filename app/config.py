@@ -1,0 +1,7 @@
+ACCOUNT_OU = "Testing"
+ACCOUNT_OU_ON_DELETE = "ou-p8qa-7ts76j9l"
+PULUMI_ORG = "lbrlabs"
+PULUMI_PROJECT_NAME = "aws-accounts"
+GITHUB_ORG = "lbrlabs"
+GITHUB_REPO = "aws-accounts"
+OIDC_ROLE_ARN = "arn:aws:iam::609316800003:role/pulumi-deploy-ff54f5f"
